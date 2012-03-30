@@ -13,7 +13,7 @@ end
 require File.expand_path("../../lib/mongoid_fulltext", __FILE__)
 Dir["#{File.dirname(__FILE__)}/models/**/*.rb"].each { |f| require f }
 
-Rspec.configure do |c|
+RSpec.configure do |c|
   c.before(:each) do
     Mongoid.master.collections.select {|c| c.name !~ /system/ }.each(&:drop)
   end
