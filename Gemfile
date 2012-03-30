@@ -8,4 +8,6 @@ group :development do
   gem "bson", "~> 1.5.2" 
   gem "rspec", "~> 2.9.0" 
   gem "jeweler", "~> 1.8.3"
+  gem 'guard-spork'
+  gem 'guard-rspec'
 end
