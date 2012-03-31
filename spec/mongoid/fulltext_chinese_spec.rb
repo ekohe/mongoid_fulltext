@@ -6,6 +6,8 @@ module Mongoid
     before do
       @hat = ChinesePost.create(title: "华丽的帽子")
       @i_like_ror = ChinesePost.create(title: "我最喜欢ruby on rails，但是我也使用其他工具")
+      @coffee_machine = ChinesePost.create(title: "咖啡机")
+      @coffees = ChinesePost.create(title: "花式咖啡举例：拿铁，卡布奇诺，摩卡……")
     end
 
     context "produce correct ngrams when the field contains Chinese" do
@@ -20,6 +22,10 @@ module Mongoid
       it "should not ignore Chinese characters" do
         hat_ngrams.keys.each { |e| puts e }
         hat_ngrams.size.should_not == 0
+
+        # Chinese word with a single character should not be ignored
+        coffee_machine = ChinesePost.all_ngrams(@coffee_machine.title, config)
+        coffee_machine.size.should == 2
       end
 
       it "should not include stop words" do
@@ -36,9 +42,11 @@ module Mongoid
 
     context "be able to search Chinese words" do
       it "should be able to search a simple word" do
-        ChinesePost.count.should == 2
         ChinesePost.fulltext_search("帽子").first.should == @hat
         ChinesePost.fulltext_search("喜欢").first.should == @i_like_ror
+        ChinesePost.fulltext_search("咖啡机").first.should == @coffee_machine
+        coffee = ChinesePost.fulltext_search("咖啡")
+        coffee.size.should == 2
       end
 
 

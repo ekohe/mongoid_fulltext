@@ -243,6 +243,7 @@ module Mongoid::FullTextSearch
         end
       end
 
+
       # Add 'short prefix' records to the array: prefixes of the string that are length (ngram_width - 1)
       if config[:index_short_prefixes]
         prefixes_seen = {}
@@ -260,7 +261,8 @@ module Mongoid::FullTextSearch
       if config[:index_full_words] or config[:zh]
         full_words_seen = {}
         all_words.each do |word|
-          if word.length > 1 and full_words_seen[word].nil? and (config[:stop_words][word].nil? or word == filtered_str)
+          if (word.length > 1 or config[:zh]) and full_words_seen[word].nil? and
+            (config[:stop_words][word].nil? or word == filtered_str)
             ngram_array << {:ngram => word, :score => 1 + 1.0/filtered_str.length}
             full_words_seen[word] = true
           end
@@ -284,6 +286,17 @@ module Mongoid::FullTextSearch
       end
     end
 
+    # Helper method
+    def rmmseg_tokens(str)
+      r = RMMSeg::Algorithm.new(str)
+      tokens = []
+      while token = r.next_token
+        tokens << token
+      end
+      tokens.map { |t| t.text.force_encoding(ENCODING) }
+    end
+
+
     private
     # Take a list of filters to be mapped so they can update the query
     # used upon the fulltext search of the ngrams
@@ -298,18 +311,12 @@ module Mongoid::FullTextSearch
         end
       }]
     end
+
+
     def format_query_filter operator, key, value
       ['filter_values.%s' % key, {operator => [value].flatten}]
     end
 
-    def rmmseg_tokens(str)
-      r = RMMSeg::Algorithm.new(str)
-      tokens = []
-      while token = r.next_token
-        tokens << token
-      end
-      tokens.map { |t| t.text.force_encoding(ENCODING) }
-    end
 
   end
 
