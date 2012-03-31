@@ -58,7 +58,14 @@ module Mongoid::FullTextSearch
       config[:word_separators] = Hash[config[:word_separators].split('').map{ |ch| [ch,ch] }]
       self.mongoid_fulltext_config[index_name] = config
 
-      before_save(:update_ngram_index) if config[:reindex_immediately]
+      if config[:reindex_immediately]
+        before_save do |record|
+          # Update the index only if the configured field is changed, or it's not specified.
+          if config[:ngram_fields] == [:to_s] or (record.changed.map(&:to_sym) & config[:ngram_fields]).size > 0
+            record.update_ngram_index
+          end
+        end
+      end
       before_destroy :remove_from_ngram_index
     end
 
