@@ -8,7 +8,8 @@ guard 'spork', :cucumber_env => { 'RAILS_ENV' => 'test' }, :rspec_env => { 'RAIL
 end
 
 
-guard 'rspec', :version => 2, :cli => '--drb'  do
-  watch(%r{^lib/(.+)\.rb$})     { "spec" }
-  watch('spec/spec_helper.rb')  { "spec" }
+guard 'rspec', :version => 2, :cli => '--color --fail-fast --drb' do
+  watch(%r{^lib/(.+)\.rb$})          { "spec" }
+  watch(%r{^spec/(.+)_spec.rb$})     { |m| m[0] }
+  watch('spec/spec_helper.rb')       { "spec" }
 end
