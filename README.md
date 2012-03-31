@@ -10,6 +10,30 @@ lets you do a fuzzy string search across relatively short strings, which makes i
 autocomplete boxes based on the display names of your Rails models but not appropriate for, say, 
 indexing hundreds of thousands of HTML documents.
 
+About this branch
+--------------
+
+This branch is dedicate to support Chinese. Currently it has only very basic features: index and search
+Chinese words. It works while your searchable fields contains English letters, but may have some problem 
+when the letter contains accents. 
+
+Enabling Chinese is simple, add `:zh => true` to `fulltext_search_in` declaration, for instance:
+
+    class Post
+      include Mongoid::Document
+      include Mongoid::FullTextSearch
+    
+      field :title
+      fulltext_search_in :title, zh: true
+      
+    end
+
+
+
+In most cases, contents in database consists of only one language. If your
+site is Chinese only, this would help.
+
+
 Install
 --------------
 
@@ -20,19 +44,21 @@ Some examples:
 
 Suppose you have an `Artist` model and want to index each artist's name:
 
-    class Artist
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artist
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :first_name
-      field :last_name
+  field :first_name
+  field :last_name
 
-      def name
-        [first_name, last_name].join(' ')
-      end
+  def name
+    [first_name, last_name].join(' ')
+  end
 
-      fulltext_search_in :name
-    end
+  fulltext_search_in :name
+end
+```
 
 The `fulltext_search_in` directive will index the full name of the artist, so now
 you can call:
