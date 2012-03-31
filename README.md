@@ -19,15 +19,16 @@ when the letter contains accents.
 
 Enabling Chinese is simple, add `:zh => true` to `fulltext_search_in` declaration, for instance:
 
-    class Post
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
-    
-      field :title
-      fulltext_search_in :title, zh: true
-      
-    end
+```ruby
+class Post
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
+  field :title
+  fulltext_search_in :title, zh: true
+  
+end
+```
 
 
 In most cases, contents in database consists of only one language. If your
@@ -63,29 +64,37 @@ end
 The `fulltext_search_in` directive will index the full name of the artist, so now
 you can call:
 
-    Artist.fulltext_search("vince vangogh")
+```ruby
+Artist.fulltext_search("vince vangogh")
+```
 
 which will return an array of the Artist instances that best match the search string. Most likely,
 Vincent van Gogh will be included in the results. You can index multiple fields with the same
 index, so we can get the same effect of our Artist index above using:
 
-    class Artist
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artist
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :first_name
-      field :last_name
+  field :first_name
+  field :last_name
 
-      fulltext_search_in :first_name, :last_name
-    end
+  fulltext_search_in :first_name, :last_name
+end
+```
 
 To restrict the number of results returned, pass the `:max_results` parameter to `fulltext_search`:
 
-    Artist.fulltext_search("vince vangogh", { :max_results => 5 })
+```ruby
+Artist.fulltext_search("vince vangogh", { :max_results => 5 })
+```
 
 To return a pair of `[ result, score ]` instead of an array of results, pass the `:return_scores` parameter to `fulltext_search`:
 
-    Artist.fulltext_search("vince vangogh", { :return_scores => true })
+```ruby
+Artist.fulltext_search("vince vangogh", { :return_scores => true })
+```
 
 The larger a score is, the better mongoid_fulltext thinks the match is. The scores have the following rough 
 interpretation that you can use to make decisions about whether the match is good enough:
@@ -100,19 +109,21 @@ interpretation that you can use to make decisions about whether the match is goo
 If you don't specify a field to index, the default is the result of `to_s` called on the object.
 The following definition will index the first and last name of an artist:
 
-    class Artist
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artist
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :first_name
-      field :last_name
+  field :first_name
+  field :last_name
 
-      def to_s
-        '%s %s' % [first_name, last_name]
-      end
+  def to_s
+    '%s %s' % [first_name, last_name]
+  end
 
-      fulltext_search_in
-    end 
+  fulltext_search_in
+end
+```
 
 The full-text index is stored in a separate MongoDB collection in the same database as the
 models you're indexing. By default, the name of this collection is generated for you. Above,
@@ -120,35 +131,41 @@ a collection named something like `mongoid_fulltext.index_artist_0` will be crea
 hold the index data. You can override this naming and provide your own collection name with 
 the :index_name parameter:
 
-    class Artwork
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artwork
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :title
-      fulltext_search_in :title, :index_name => 'mongoid_fulltext.foobar'
-    end
+  field :title
+  fulltext_search_in :title, :index_name => 'mongoid_fulltext.foobar'
+end
+```
 
 You can also create multiple indexes on a single model, in which case you'll want to
 provide index names:
 
-    class Artwork
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artwork
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :title
-      field :artist_name
-      field :gallery_name
-      filed :gallery_address
+  field :title
+  field :artist_name
+  field :gallery_name
+  filed :gallery_address
 
-      fulltext_search_in :title, :index_name => 'title_index'
-      fulltext_search_in :artist_name, :index_name => 'artist_name_index'
-      fulltext_search_in :gallery_name, :gallery_address, :index_name => 'gallery_index'
-    end
+  fulltext_search_in :title, :index_name => 'title_index'
+  fulltext_search_in :artist_name, :index_name => 'artist_name_index'
+  fulltext_search_in :gallery_name, :gallery_address, :index_name => 'gallery_index'
+end
+```
 
 The index names are helpful now because you'll have to specify which one you want to use when you
 call `fulltext_search`:
 
-    Artwork.fulltext_search('warhol', :index => 'artist_name_index')
+```ruby
+Artwork.fulltext_search('warhol', :index => 'artist_name_index')
+```
 
 If you have multiple indexes specified and you don't supply a name to `fulltext_search`, the
 method call will raise an exception.
@@ -160,26 +177,30 @@ indexed for full-text search, then to get results from both, you'd have to call
 your intention is instead to get the top k results from both Artists and Artworks, you can
 merge both into a single index by using the same `:external_index` parameter:
 
-    class Artwork
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artwork
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :title
-      fulltext_search_in :title, :index_name => 'artwork_and_artists'
-    end
+  field :title
+  fulltext_search_in :title, :index_name => 'artwork_and_artists'
+end
 
-    class Artist
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+class Artist
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :name
-      fulltext_search_in :name, :index_name => 'artwork_and_artists'
-    end
+  field :name
+  fulltext_search_in :name, :index_name => 'artwork_and_artists'
+end
+```
 
 Now that these two models share the same external index collection, we can search them both through
 either model's `fulltext_search` method:
 
-    Artwork.fulltext_search('picasso')  # returns same results as Artist.fulltext_search('picasso')
+```ruby
+Artwork.fulltext_search('picasso')  # returns same results as Artist.fulltext_search('picasso')
+```
 
 If you want to filter the results from full-text search, you set up filters when the indexes are
 defined. For example, suppose that in addition to wanting to use the `artwork_and_artists` index
@@ -188,41 +209,45 @@ for artists only and for artworks priced above $10,000. Instead of creating two 
 attempting to filter the results after the query is run, we can specify the filter predicates
 at the time of index definition:
 
-    class Artwork
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artwork
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :title
-      field :price
-      fulltext_search_in :title, :index_name => 'artwork_and_artists',
-                         :filters => { :is_expensive => lambda { |x| x.price > 10000 },
-                                       :has_long_name => lambda { |x| x.title.length > 20 }}
-    end
+  field :title
+  field :price
+  fulltext_search_in :title, :index_name => 'artwork_and_artists',
+                     :filters => { :is_expensive => lambda { |x| x.price > 10000 },
+                                   :has_long_name => lambda { |x| x.title.length > 20 }}
+end
 
-    class Artist
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+class Artist
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :name
-      field :birth_year
-      fulltext_search_in :name, :index_name => 'artwork_and_artists',
-                         :filters => { :born_before_1900 => lambda { |x| x.birth_year < 1900 },
-                                       :has_long_name => lambda { |x| x.name.length > 20}}
-    end
+  field :name
+  field :birth_year
+  fulltext_search_in :name, :index_name => 'artwork_and_artists',
+                     :filters => { :born_before_1900 => lambda { |x| x.birth_year < 1900 },
+                                   :has_long_name => lambda { |x| x.name.length > 20}}
+end
+```
 
 After defining filters, you can query for results that match particular values of filters:
 
-    # Only return artists born before 1900 that match 'foobar'
-    Artist.fulltext_search('foobar', :born_before_1900 => true)
+```ruby
+# Only return artists born before 1900 that match 'foobar'
+Artist.fulltext_search('foobar', :born_before_1900 => true)
 
-    # Return artists or artworks that match 'foobar' and have short names
-    Artist.fulltext_search('foobar', :has_long_name => false)
+# Return artists or artworks that match 'foobar' and have short names
+Artist.fulltext_search('foobar', :has_long_name => false)
 
-    # Only return artworks with prices over 10000 that match 'mona lisa'
-    Artwork.fulltext_search('mona lisa', :is_expensive => true)
+# Only return artworks with prices over 10000 that match 'mona lisa'
+Artwork.fulltext_search('mona lisa', :is_expensive => true)
 
-    # Only return artworks with prices less than 10000 that match 'mona lisa'
-    Artwork.fulltext_search('mona lisa', :is_expensive => false)
+# Only return artworks with prices less than 10000 that match 'mona lisa'
+Artwork.fulltext_search('mona lisa', :is_expensive => false)
+```
 
 Note that in all of the example queries above, supplying a filter that is defined on exactly 
 one of the models will restrict the search to results from that model only. For example,
@@ -278,41 +303,47 @@ Array filters
 
 A filter may also return an Array. Consider the following example.
 
-    class Artist
-      include Mongoid::Document
-      include Mongoid::FullTextSearch
+```ruby
+class Artist
+  include Mongoid::Document
+  include Mongoid::FullTextSearch
 
-      field :name
-      field :exhibitions, as: Array, default: []
+  field :name
+  field :exhibitions, as: Array, default: []
 
-      fulltext_search_in :name, :index_name => 'exhibited_artist',
-        :filters => { 
-          :exhibitions => lambda { |artist| artist.exhibitions }
-        }
-    end
+  fulltext_search_in :name, :index_name => 'exhibited_artist',
+    :filters => { 
+      :exhibitions => lambda { |artist| artist.exhibitions }
+    }
+end
+```
 
 You can now find all artists that are at the Art Basel exhibition or all artists that have exhibited
 at both the Art Basel and the New York Armory exhibition.
 
-    # All artists
-    Artist.fulltext_search('foobar')
+```ruby
+# All artists
+Artist.fulltext_search('foobar')
 
-    # Artists at the Art Basel exhibition only
-    Artist.fulltext_search('foobar', :exhibitions => [ "Art Basel" ])
+# Artists at the Art Basel exhibition only
+Artist.fulltext_search('foobar', :exhibitions => [ "Art Basel" ])
 
-    # Artists at both the Art Basel and the New York Armory exhibition
-    Artist.fulltext_search('foobar', :exhibitions => [ "Art Basel", "New York Armory" ])
+# Artists at both the Art Basel and the New York Armory exhibition
+Artist.fulltext_search('foobar', :exhibitions => [ "Art Basel", "New York Armory" ])
 
-    # Note that the following explicit syntax may be used to achieve the
-    # same result as above
-    Artist.fulltext_search('foobar', :exhibitions => {:all => [ "Art Basel", "New York Armory" ]})
+# Note that the following explicit syntax may be used to achieve the
+# same result as above
+Artist.fulltext_search('foobar', :exhibitions => {:all => [ "Art Basel", "New York Armory" ]})
+```
 
 If you want to find all artists that are at either the Art Basel or the
 New York Armory exhibition, then you may specify the `:any` operator in
 the filter.
 
-    # Artists at either the Art Basel or the New York Armory exhibition
-    Artist.fulltext_search('foobar', :exhibitions => {:any => [ "Art Basel", "New York Armory" ]})
+```ruby
+# Artists at either the Art Basel or the New York Armory exhibition
+Artist.fulltext_search('foobar', :exhibitions => {:any => [ "Art Basel", "New York Armory" ]})
+```
 
 Note that `:all` and `:any` are currently the only supported operators
 for the array filters.
@@ -324,14 +355,18 @@ The fulltext index is built and maintained incrementally by hooking into `before
 `before_destroy` callbacks on each model that's being indexed. If you want to build an index
 on existing models, you can call the `update_ngram_index` method on the class or each instance:
 
-    Artwork.update_ngram_index
-    Artwork.find(id).update_ngram_index
+```ruby
+Artwork.update_ngram_index
+Artwork.find(id).update_ngram_index
+```
 
 You can remove all or individual instances from the index with the `remove_from_ngram_index`
 method:
 
-    Artwork.remove_from_ngram_index
-    Artwork.find(id).remove_from_ngram_index
+```ruby
+Artwork.remove_from_ngram_index
+Artwork.find(id).remove_from_ngram_index
+```
 
 The methods on the model level perform bulk removal operations and are therefore faster that 
 updating or removing records individually.
@@ -339,14 +374,16 @@ updating or removing records individually.
 If you need to control when the index is updated, provide the `update_if` option to
 `fulltext_search_in`, and set it to a symbol, string, or proc. Eg:
 
-    # Only update the "age" index if the "age" field has changed.
-    fulltext_search_in :age,    :update_if => :age_changed?
+```ruby
+# Only update the "age" index if the "age" field has changed.
+fulltext_search_in :age,    :update_if => :age_changed?
 
-    # Only update the "names" index if the "firstname" or "lastname" field has changed.
-    fulltext_search_in :names,  :update_if => "firstname_changed? || lastname_changed?"
+# Only update the "names" index if the "firstname" or "lastname" field has changed.
+fulltext_search_in :names,  :update_if => "firstname_changed? || lastname_changed?"
 
-    # Only update the "email" index if the "email" field ends with "gmail.com".
-    fulltext_search_in :email,  :update_if => Proc.new { |doc| doc.email.match /gmail.com\Z/ }
+# Only update the "email" index if the "email" field ends with "gmail.com".
+fulltext_search_in :email,  :update_if => Proc.new { |doc| doc.email.match /gmail.com\Z/ }
+```
 
 Mongo Database Indexes
 ----------------------
@@ -357,7 +394,9 @@ collections. These indexes are required for an efficient full text search.
 
 Creating database indexes is typically done with the `db:mongoid:create_indexes` task.
 
-    rake db:mongoid:create_indexes
+```bash
+rake db:mongoid:create_indexes
+```
 
 Running the specs
 -----------------
